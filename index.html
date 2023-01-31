@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>FCC D3 USA GDP BAR CHART</title>
+    <meta charset="utf-8">
+</head>
+<body style="width: 100vw; height: 100vh; background-color:#2F2F2F;display: flex; justify-content: center;align-items: center;">
+<script type="module">
+
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+    const getData = async () => {
+        const request = await fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json')
+        return await request.json()
+    }
+    const {data} = await getData()
+
+    const drawChart = (data) => {
+        if (!data) setTimeout(() => drawChart(dates, gdp), 250)
+        const [dates, gdp] = [data.map(([date]) => new Date(date)), data.map(([, gdp]) => gdp)]
+        const height = 800;
+        const width = 1200;
+        const yScale = d3.scaleLinear().domain([0, d3.max(gdp)]).range([height * .9, height * .1])
+        const xScale = d3.scaleTime().domain(d3.extent(dates)).range([0, width * .8])
+
+        d3.select("body")
+            .append("svg")
+            .attr("id", "svg")
+            .attr("width", width)
+            .attr("height", height)
+            .style("background-color", "#1F1F1F")
+            .style("color", "#DFDFDF");
+
+        d3.select("svg")
+            .append("text")
+            .attr("x", width / 2)
+            .attr("y", height * .075)
+            .attr("text-anchor", "middle")
+            .attr("id", "title")
+            .attr("fill", "white")
+            .style("font-family", "sans-serif")
+            .text("United States GDP");
+
+        d3.select("svg")
+            .append("g")
+            .attr("id", "x-axis")
+            .attr("transform", `translate(${width * .1}, ${height * .9})`)
+            .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y")));
+
+        d3.select("svg")
+            .append("g")
+            .attr("transform", `translate(${width * .1}, 0)`)
+            .attr("id", "y-axis")
+            .call(d3.axisLeft(yScale))
+
+        d3.select("svg")
+            .selectAll("rect")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("class", "bar")
+            .style("fill", "#E5E7EB")
+            .attr("transform", `translate(${width * .1}, 0)`)
+            .attr("x", (d) => xScale(new Date(d[0])))
+            .attr("y", (d) => yScale(d[1]))
+            .attr("width", width * .8 / data.length)
+            .attr("height", (d) => height * .9 - yScale(d[1]))
+            .attr("data-date", (d) => d[0])
+            .attr("data-gdp", (d) => d[1])
+            .on("mouseover", (e, d) => {
+                const quarter = Math.floor((new Date(d[0]).getMonth() + 3) / 3);
+                const year = new Date(d[0]).getFullYear();
+                d3.select(e.target).style("fill", "black");
+                d3.select("#tooltip")
+                    .attr("data-date", d[0])
+                    .style("left", `${e.clientX}px`)
+                    .style("top", `${e.clientY - 20}px`)
+                    .style("opacity", 0.9)
+                    .style("padding", "0.5rem")
+                    .style("border-radius", "0.5rem")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", "0.75rem")
+                    .style("text-align", "center")
+                    .style("color", "#1F1F1F")
+                    .html(
+                        `${year} Q${quarter}<br>$${d[1].toLocaleString("en-US")} Billion`
+                    );
+                console.log(yScale(d[1]))
+            })
+            .on("mouseout", (e) => {
+                d3.select(e.target).style("fill", "#E5E7EB");
+                d3.select("#tooltip").style("opacity", 0);
+            });
+        d3.select("body")
+            .append("div")
+            .attr("id", "tooltip")
+            .attr("opacity", "0")
+            .style("position", "absolute")
+            .style("background-color", "#DFDFDF")
+            .style("font-size", "0.75rem")
+            .style("left", "0")
+            .style("top", "0")
+            .style("transform", "translate(1rem, -1rem)")
+            .style("transition", "opacity 0.2s ease-in-out")
+            .style("z-index", "1000")
+            .style("box-shadow", "0 0 0.5rem rgba(0, 0, 0, 0.5)")
+    }
+    drawChart(data)
+
+</script>
+<script defer src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+</body>
+</html>
